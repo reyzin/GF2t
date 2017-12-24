@@ -2,7 +2,7 @@ package gf2t;
 import java.util.Arrays;
 
 public class GF2_128 {
-    public long [] word = new long[2]; //TODO: make private
+    private long [] word = new long[2];
 
     // TODO: change int/long/byte to int32/int64, etc.
 
