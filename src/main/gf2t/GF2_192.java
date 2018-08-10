@@ -1,24 +1,24 @@
 package gf2t;
 
-public class GF2_128 {
-    private long [] word = new long[2];
+public class GF2_192 {
+    private long [] word = new long[3];
 
     /**
      *
      * @param that
      * @return true if and only if this and that represent the same field element
      */
-    public boolean equals(GF2_128 that) {
-        return this.word[0]==that.word[0] && this.word[1]==that.word[1];
+    public boolean equals(GF2_192 that) {
+        return this.word[0]==that.word[0] && this.word[1]==that.word[1] && this.word[2]==that.word[2];
     }
 
-    // using irreducible polynomial x^128+x^7+x^2+x+1
+    // using irreducible polynomial x^192+x^7+x^2+x+1
     // We need only the last word
-    static private final long irredPentanomial = (1l<<7) | (1l<<2) | (1l<<1) | 1l;
+    static private final long irredPentanomial = (1L<<7) | (1L<<2) | (1L<<1) | 1L;
 
     // irredPentanomial times 0, 1, x, x+1, x^2, x^2+1, x^2+x, x^2+x+1, x^3, x^3+1, x^3+x, x^3+x+1, x^3+x^2, x^3+x^2+1, x^3+x^2+x, x^3+x^2x+1,
-    // Need only the last word, because the first word is 0
-    static private final long [] irredMuls = {0l, irredPentanomial, irredPentanomial<<1, (irredPentanomial<<1)^irredPentanomial,
+    // Need only the last word, because the leading two words are 0
+    static private final long [] irredMuls = {0L, irredPentanomial, irredPentanomial<<1, (irredPentanomial<<1)^irredPentanomial,
             irredPentanomial<<2, (irredPentanomial<<2)^irredPentanomial, (irredPentanomial<<2)^(irredPentanomial<<1), (irredPentanomial<<2)^(irredPentanomial<<1)^irredPentanomial,
             irredPentanomial<<3, (irredPentanomial<<3)^irredPentanomial, (irredPentanomial<<3)^(irredPentanomial<<1), (irredPentanomial<<3)^(irredPentanomial<<1)^irredPentanomial,
             (irredPentanomial<<3)^(irredPentanomial<<2), (irredPentanomial<<3)^(irredPentanomial<<2)^irredPentanomial, (irredPentanomial<<3)^(irredPentanomial<<2)^(irredPentanomial<<1), (irredPentanomial<<3)^(irredPentanomial<<2)^(irredPentanomial<<1)^irredPentanomial
@@ -28,58 +28,64 @@ public class GF2_128 {
     /**
      * returns the 0 field element
      */
-    public GF2_128() {
+    public GF2_192() {
     }
 
     /**
      * returns a copy of the field element
      * @param that
      */
-    public GF2_128(GF2_128 that) {
+    public GF2_192(GF2_192 that) {
         this.word[0] = that.word[0];
         this.word[1] = that.word[1];
+        this.word[2] = that.word[2];
     }
 
     /**
      * returns the field element whose 32 least significant bits are bits of that and rest are 0
      * @param that
      */
-    public GF2_128(int that) {
+    public GF2_192(int that) {
         this.word[0] = ((long) that) & 0xFFFFFFFFL;
     }
 
     /**
      * returns the field element whose bits are given by the long array
-     * @param that must be length 2
+     * @param that must be length 3
      */
-    public GF2_128(long [] that) {
-        assert (that.length == 2);
+    public GF2_192(long [] that) {
+        assert (that.length == 3);
         this.word[0] = that[0];
         this.word[1] = that[1];
+        this.word[2] = that[2];
     }
 
     /**
      * returns the field element whose bits are given by the byte array
-     * @param that must be length 16
+     * @param that must be length 24
      */
-    public GF2_128(byte [] that) {
-        assert (that.length == 16);
+    public GF2_192(byte [] that) {
+        assert (that.length == 24);
         for (int i = 0; i<8; i++) {
             word[0] |= (((long)that[i] & 0xFF))<<(i<<3);
         }
         for (int i = 0; i<8; i++) {
             word[1] |= (((long)that[i+8] & 0xFF))<<(i<<3);
         }
+        for (int i = 0; i<8; i++) {
+            word[2] |= (((long)that[i+16] & 0xFF))<<(i<<3);
+        }
     }
 
     /**
      *
-     * @return long array of length 2 containing the two words of the field element
+     * @return long array of length 3 containing the two words of the field element
      */
     public long [] toLongArray() {
-        long [] ret = new long[2];
+        long [] ret = new long[3];
         ret[0] = word[0];
         ret[1] = word[1];
+        ret[2] = word[2];
         return ret;
     }
 
@@ -89,7 +95,7 @@ public class GF2_128 {
      * @return true if this == 0, false otherwise
      */
     public boolean isZero () {
-        return word[0]==0l && word[1]==0l;
+        return word[0]==0L && word[1]==0L && word[2]==0L;
     }
 
     /**
@@ -97,7 +103,7 @@ public class GF2_128 {
      * @return true if this == 1, false otherwise
      */
     public boolean isOne () {
-        return word[0]==1l && word[1]==0l;
+        return word[0]==1L && word[1]==0L && word[2]==0L;
     }
 
     /**
@@ -107,44 +113,50 @@ public class GF2_128 {
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
 
-    public static void add (GF2_128 res, GF2_128 a, GF2_128 b) {
+    public static void add (GF2_192 res, GF2_192 a, GF2_192 b) {
         res.word[0] = a.word[0]^b.word[0];
         res.word[1] = a.word[1]^b.word[1];
+        res.word[2] = a.word[2]^b.word[2];
     }
 
     /**
-     * Computes a times b and puts the result into res. More efficient than mul(res, a, new GF2_128(b))
+     * Computes a times b and puts the result into res. More efficient than mul(res, a, new GF2_192(b))
      * @param res output; must be not null; may be equal to a and/or b
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
 
-    public static void mul (GF2_128 res, GF2_128 a, byte b) {
+    public static void mul (GF2_192 res, GF2_192 a, byte b) {
 
         // contains a*0, a*1, a*x, a*(x+1), mod reduced
         long [] a0muls = new long[4];
         long [] a1muls = new long[4];
+        long [] a2muls = new long[4];
 
         a0muls[1] = a.word[0];
         a1muls[1] = a.word[1];
+        a2muls[1] = a.word[2];
 
         // a*x
         a0muls[2] = a.word[0] << 1;
         a1muls[2] = (a.word[1] << 1) | (a.word[0]>>>63);
+        a2muls[2] = (a.word[2] << 1) | (a.word[1]>>>63);
         // mod reduce
-        a0muls[2] ^= irredMuls[(int)(a.word[1]>>>63)];
+        a0muls[2] ^= irredMuls[(int)(a.word[2]>>>63)];
 
         // a*x+a
         a0muls[3] = a0muls[1] ^ a0muls[2];
         a1muls[3] = a1muls[1] ^ a1muls[2];
+        a2muls[3] = a2muls[1] ^ a2muls[2];
 
 
         int index = (b>>>6) & 3;
-        long w0 = a0muls[index], w1 = a1muls[index];
+        long w0 = a0muls[index], w1 = a1muls[index], w2 = a2muls[index];
 
         for (int i = 4; i >= 0; i -= 2) {
             // Multiply by x^2
-            int modReduceIndex = (int) (w1 >>> 62);
+            int modReduceIndex = (int) (w2 >>> 62);
+            w2 = (w2 << 2) | (w1 >>> 62);
             w1 = (w1 << 2) | (w0 >>> 62);
             // MOD REDUCE ACCORDING TO modReduceIndex by XORing the right value
             w0 = (w0 << 2) ^ irredMuls[modReduceIndex];
@@ -153,9 +165,11 @@ public class GF2_128 {
             index =  (b >>> i) & 3;
             w0 ^= a0muls[index];
             w1 ^= a1muls[index];
+            w2 ^= a2muls[index];
         }
         res.word[0] = w0;
         res.word[1] = w1;
+        res.word[2] = w2;
     }
 
     /**
@@ -164,22 +178,23 @@ public class GF2_128 {
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
-    public static void mul (GF2_128 res, GF2_128 a, GF2_128 b) {
+    public static void mul (GF2_192 res, GF2_192 a, GF2_192 b) {
 
         // Implements a sort of times-x-and-add algorithm, except instead of multiplying by x
         // we multiply by x^4 and then add one of possible 16 precomputed values
 
         // contains a*0, a*1, a*x, a*(x+1), a*x^2, a*(x^2+1), a*(x^2+x), a*(x^2+x+1)
         // a*x^3, a*(x^3+1), a*(x^3+x), a*(x^3+x+1), a*(x^3+x^2), a*(x^3+x^2+1), a*(x^3+x^2+x), a*(x^3+x^2+x+1), all mod reduced
-        // First word of each is in a0 muls, second word of each is in a1muls
+        // First word of each is in a0 muls, second word of each is in a1muls, third word of each is in a2muls
         long [] a0muls = new long[16];
         long [] a1muls = new long[16];
+        long [] a2muls = new long[16];
 
-        // a0muls[0] and a1muls[0] are already correctly initialized to 0
-
+        // a0muls[0], a1muls[0] and a2muls[0] are already correctly initialized to 0
 
         a0muls[1] = a.word[0];
         a1muls[1] = a.word[1];
+        a2muls[1] = a.word[2];
 
         // a*x, a*x^2, a*x^3
         for (int i = 2; i<=8; i*=2) {
@@ -187,32 +202,38 @@ public class GF2_128 {
             int prev = i / 2;
             a0muls[i] = a0muls[prev] << 1;
             a1muls[i] = (a1muls[prev] << 1) | (a0muls[prev] >>> 63);
+            a2muls[i] = (a2muls[prev] << 1) | (a1muls[prev] >>> 63);
             // mod reduce
-            a0muls[i] ^= irredMuls[(int) (a1muls[prev] >>> 63)];
+            a0muls[i] ^= irredMuls[(int) (a2muls[prev] >>> 63)];
         }
 
         // a*(x+1)
         a0muls[3] = a0muls[1] ^ a0muls[2];
         a1muls[3] = a1muls[1] ^ a1muls[2];
+        a2muls[3] = a2muls[1] ^ a2muls[2];
+
 
         // a*(x^2+1), a*(x^2+x), a*(x^2+x+1)
         for (int i = 1; i<4; i++) {
             a0muls[4|i] = a0muls[4]^a0muls[i];
             a1muls[4|i] = a1muls[4]^a1muls[i];
+            a2muls[4|i] = a2muls[4]^a2muls[i];
         }
 
         // a*(x^3+1), a*(x^3+x), a*(x^3+x+1), a*(x^3+x^2), a*(x^3+x^2+1), a*(x^3+x^2+x), a*(x^3+x^2+x+1)
         for (int i = 1; i<8; i++) {
             a0muls[8|i] = a0muls[8]^a0muls[i];
             a1muls[8|i] = a1muls[8]^a1muls[i];
+            a2muls[8|i] = a2muls[8]^a2muls[i];
         }
 
-        long w0 = 0, w1=0;
-        for (int j = 1; j>=0; j--) {
+        long w0 = 0, w1 = 0, w2 = 0;
+        for (int j = 2; j>=0; j--) {
             long multiplier = b.word[j];
             for (int i = 60; i >= 0; i -= 4) {
                 // Multiply by x^4
-                int modReduceIndex = (int) (w1 >>> 60);
+                int modReduceIndex = (int) (w2 >>> 60);
+                w2 = (w2 << 4) | (w1 >>> 60);
                 w1 = (w1 << 4) | (w0 >>> 60);
                 // MOD REDUCE ACCORDING TO modReduceIndex by XORing the right value
                 w0 = (w0 << 4) ^ irredMuls[modReduceIndex];
@@ -221,10 +242,12 @@ public class GF2_128 {
                 int index = (int) ((multiplier >>> i) & 15);
                 w0 ^= a0muls[index];
                 w1 ^= a1muls[index];
+                w2 ^= a2muls[index];
             }
         }
         res.word[0] = w0;
         res.word[1] = w1;
+        res.word[2] = w2;
     }
 
 
@@ -234,27 +257,31 @@ public class GF2_128 {
      * @param z input to be raised to 2^16; may be equal to res, in which case will get overwritten
      */
 
-    public static void invert (GF2_128 res, GF2_128 z) {
-        // Computes z^{2^128-2} = z^{exponent written in binary as 127 ones followed by a 0}
+    public static void invert (GF2_192 res, GF2_192 z) {
+        // Computes z^{2^192-2} = z^{exponent written in binary as 191 ones followed by a 0}
         // (by Fermat's little theorem, this is the correct inverse)
 
         // contains x raised to the power whose binary representation is 2^i ones
-        GF2_128 zTo2i1s = new GF2_128(z);
+        GF2_192 zTo2i1s = new GF2_192(z);
 
-        sqr(res, z);
+        sqr(res, z); // res = z^2
         // contains x raised to the power whose binary representation is 2^i ones followed by 2^i zeros
-        GF2_128 zTo2i1s2i0s = new GF2_128(res);
+        GF2_192 zTo2i1s2i0s = new GF2_192(res);
 
 
         int twoToi = 2;
         for (int i = 1; i<=3; i++) {
             mul(zTo2i1s, zTo2i1s2i0s, zTo2i1s);
-            // aTo2i1s2i0s = aTo2i1s with 2 zeros appended to the exponent
+
+            // Now compute aTo2i1s2i0s = aTo2i1s with 2^i zeros appended to the exponent
             sqr(zTo2i1s2i0s, zTo2i1s);
             for (int j = 1; j < twoToi; j++) {
                 sqr(zTo2i1s2i0s, zTo2i1s2i0s);
             }
+
             mul(res, res, zTo2i1s2i0s);
+            // above line makes res = z raised to exponent that has 2^{i+1} bits, all 1s except last 0
+
             twoToi *= 2;
         }
 
@@ -263,7 +290,9 @@ public class GF2_128 {
         mul(zTo2i1s, zTo2i1s2i0s, zTo2i1s);
         // aTo2i1s2i0s = aTo2i1s with 16 zeros appended to the exponent
         pow65536(zTo2i1s2i0s, zTo2i1s);
+
         mul (res, res, zTo2i1s2i0s);
+        //  above line makes res = z  raised to exponent that has 32 bits, all 1s except last 0
 
         // compute for i = 5
         mul(zTo2i1s, zTo2i1s2i0s, zTo2i1s);
@@ -271,20 +300,44 @@ public class GF2_128 {
         pow65536(zTo2i1s2i0s, zTo2i1s);
         pow65536(zTo2i1s2i0s, zTo2i1s2i0s);
         mul (res, res, zTo2i1s2i0s);
+        // res is now raised to exponent that has 64 bits, all 1s except last 0
 
         // compute for i = 6
         mul(zTo2i1s, zTo2i1s2i0s, zTo2i1s);
-        // aTo2i1s2i0s = aTo2i1s with 64 zeros appended to the exponent
+        // The fol\lowing four lines will make aTo2i1s2i0s = aTo2i1s with 64 zeros appended to the exponent
         pow65536(zTo2i1s2i0s, zTo2i1s);
         pow65536(zTo2i1s2i0s, zTo2i1s2i0s);
         pow65536(zTo2i1s2i0s, zTo2i1s2i0s);
         pow65536(zTo2i1s2i0s, zTo2i1s2i0s);
-        mul (res, res, zTo2i1s2i0s);
+
+        // Now compute z to exponent 128 1s followed by 64 0s (in binary)
+        mul(zTo2i1s, zTo2i1s2i0s, zTo2i1s); // this computes z to exponent of 128 ones (in binary)
+        // The following four lines will add 64 0s to the exponent (in binary)
+        GF2_192 t = new GF2_192();
+        pow65536(t, zTo2i1s);
+        pow65536(t, t);
+        pow65536(t, t);
+        pow65536(t, t);
+
+        mul (res, res, t);
+        //  above line makes res = z raised to exponent that has 191 bits, all 1s except last 0
+    }
+
+
+    public static void sqr (GF2_192 res, GF2_192 z) {
+        mul(res, z, z);
+    }
+    public static void pow65536 (GF2_192 res, GF2_192 z) {
+        sqr(res, z);
+        for (int k=1; k<16; k++) {
+            sqr(res, res);
+        }
+
     }
 
 
 
-    /* These tables are needed for the sqr function -- see explanation in the code sqr */
+        /* These tables are needed for the sqr function -- see explanation in the code sqr */
     /* They take up less than 3 KB */
 
     // byte0SquaresTable[i] contains the trailing 16 bits of the square of the field element that has i in the last byte (byte 0) of word 0 (and 0s elsewhere).
@@ -317,8 +370,8 @@ public class GF2_128 {
         byte15SquaresTableWord0 = new short[8];
         byte15SquaresTableWord1 = new short[256];
 
-        GF2_128 t = new GF2_128();
-        GF2_128 res = new GF2_128();
+        GF2_192 t = new GF2_192();
+        GF2_192 res = new GF2_192();
 
         for (t.word[0] = 0l; t.word[0] < 256l; t.word[0]++) {
             mul(res, t, t);
@@ -366,7 +419,7 @@ public class GF2_128 {
      * @param z input to be squared; may be equal to res, in which case will get overwritten
      */
 
-    public static void sqr (GF2_128 res, GF2_128 z) {
+    public static void bettersqr (GF2_192 res, GF2_192 z) {
         // Squaring over finite fields of characteristic 2 is a linear operator
         // Thus, it suffices to precompute squares of every possible byte value
         // in every possible byte position, and then compute res by XORing correct precomputed values
@@ -377,7 +430,7 @@ public class GF2_128 {
         // of the squares of the same byte 0, because no modular reduction takes place.
         //
         // For our specific irreducible polynomial, squares of byte 8 have degree less than 22 (i.e., all bits are 0 only
-        // except some of the 22 trailing bits), and squares of bytes 9, 10, 11, 12, 13, 14 are simply left shifts 
+        // except some of the 22 trailing bits), and squares of bytes 9, 10, 11, 12, 13, 14 are simply left shifts
         // (by 2, 4, 6, 8, 10, 12 bytes, respectively) of the squares of the same byte 8.
         //
         // Thus, we need tables only for squares of byte 0, byte 8, and byte 15.
@@ -428,8 +481,8 @@ public class GF2_128 {
         pow65536Table0 = new long[(64/4)*16*2];
         pow65536Table1 = new long[(64/4)*16*2];
 
-        GF2_128 t = new GF2_128();
-        GF2_128 res = new GF2_128();
+        GF2_192 t = new GF2_192();
+        GF2_192 res = new GF2_192();
 
 
         for (int shift = 0; shift < 64; shift+=4) {
@@ -469,7 +522,7 @@ public class GF2_128 {
      * @param res output; must be not null; may be equal to z
      * @param z input to be raised to 2^16; may be equal to res, in which case will get overwritten
      */
-    public static void pow65536 (GF2_128 res, GF2_128 z) {
+    public static void betterpow65536 (GF2_192 res, GF2_192 z) {
         // Squaring over finite fields of characteristic 2 is a linear operator, and
         // therefore is so is raising to the power 65536 = 2^16.
         // Thus, it suffices to precompute squares of every possible four-bit nibble
@@ -515,7 +568,6 @@ public class GF2_128 {
      * @return bits of this in hexadecimal notation, most significant on the left
      */
     public String toString() {
-       return String.format("%016X", word[1])+String.format("%016X", word[0]);
+        return String.format("%016X", word[2])+String.format("%016X", word[1])+String.format("%016X", word[0]);
     }
 }
-

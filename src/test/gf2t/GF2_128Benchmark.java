@@ -34,7 +34,7 @@ public class GF2_128Benchmark {
         t4 = System.nanoTime();
         System.out.printf("Multiplication %4.1f ns",(t4-t3)/(double)numMult);
 
-        System.out.printf(" (squaring is %2.1f times faster)\n",((double)t2-t1)/(t4-t3)*numSqr/(double)numMult);
+        System.out.printf(" (squaring is %2.1f times faster)\n",((double)t4-t3)/(t2-t1)*numSqr/(double)numMult);
 
 
         int numpow65536 = 500000000;
