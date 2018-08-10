@@ -14,7 +14,7 @@ public class GF2_128_Poly {
      * If points are not all distinct, or if 0 is in the points array and valueAt0.isPresent(), behavior is undefined.
      * valueAt0 is separated only for efficiency reason; the caller can treat 0 like any other point instead
      * (i.e., the points array can include 0 if !valueAt0.isPresent(), but computation will be slightly less efficient).
-     * If points or values is null, or if their lengths differ, returns null.
+     * If any input is null, or if lengths of points and values arrays differ, or if the arrays are 0 length, returns null.
      *
      * @param points the set of distinct inputs to the returned polynomial
      *               (last byte of the field element only; all other bits are assumed to be 0)
@@ -24,7 +24,7 @@ public class GF2_128_Poly {
      *         (if valueAt0.isPresent())
      */
     public static GF2_128_Poly interpolate (byte[] points, GF2_128 [] values, Optional<GF2_128> valueAt0) {
-        if (points == null || values == null || values.length == 0 || values.length!=points.length) return null;
+        if (points == null || values == null || valueAt0 == null || values.length == 0 || values.length!=points.length) return null;
         boolean zeroPresent = valueAt0.isPresent();
 
         int resultDegree = values.length-1;

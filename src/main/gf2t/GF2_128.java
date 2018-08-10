@@ -4,8 +4,6 @@ import java.util.Arrays;
 public class GF2_128 {
     private long [] word = new long[2];
 
-    // TODO: change int/long/byte to int32/int64, etc.
-
     /**
      *
      * @param that
@@ -381,7 +379,7 @@ public class GF2_128 {
         // (by 2, 4, 6, 8, 10, 12 bytes, respectively) of the squares of the same byte 8.
         //
         // Thus, we need tables only for squares of byte 0, byte 8, and byte 15.
-        // 
+        //
         long input0 = z.word[0];
         long input1 = z.word[1];
 
