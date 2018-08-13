@@ -300,7 +300,7 @@ public class GF2_192Test {
         // includes squaring test
         GF2_192 res = new GF2_192();
         GF2_192 z;
-        int maxK = 11;
+        int maxK = 15;
 
         for (int k=0; k<maxK; k++) {
             GF2_192.power2To2ToK(res, zero,k);
@@ -349,9 +349,6 @@ public class GF2_192Test {
                     // res1 is the ground truth, computed using smaller values of k than is currently being tested
                     GF2_192.power2To2ToK(res1, res1,k-1);
                     assertFalse("Fail: power2To2ToK for k = " + k + " value = " + z, !res.equals(res1));
-                }
-                if (k>=7) {
-                    //assertFalse("Fail: Fermat's little theorem violation for k = "+k+" value = "+z, !res.equals(z));
                 }
 
                 // Input location = output location tests
