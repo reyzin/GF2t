@@ -262,7 +262,6 @@ public class GF2_128 {
             // prepend 2^k ones to res
             mul(res, res, zTo2ToK1s2ToK0s);
         }
-
     }
 
 
@@ -331,7 +330,7 @@ public class GF2_128 {
             }
             for (; i<128; i++)  {
                 z.word[0] = 0L;
-                z.word[1] = 1L<<(i-64);;
+                z.word[1] = 1L<<(i-64);
                 power2To2ToK(z, z, k-1);
                 power2To2ToK(z, z, k-1);
                 powTable0[k][i] = z.word[0];
@@ -379,7 +378,6 @@ public class GF2_128 {
         // be input-dependent, this gives a higher risk of side-channel attacks that reveal z.
         // Hence, it's not implemented.
         power2To2ToK(res, z, 0);
-
     }
 
     /**
@@ -392,18 +390,20 @@ public class GF2_128 {
 
     public static void power2To2ToK(GF2_128 res, GF2_128 z, int k) {
         if (k>=7) {
-            // By Fermat's little theorem, z^{2^k} = z^{2^k} mod (2^{128}-1)
-            // If k>=7, then 2^k mod (2^{128}-1) = 1 (proof below), and so z^{2^k) = z^1 = z,
-            // so we just copy z into res
-            // Here's the proof 2^k mod (2^{128}-1) = 1:
-            // 2^k - 1 = (2^{k-1}-1)*(2^{k-1}+1) = (2^{k-2}-1)*(2^{k-2}+1)*(2^{k-1}+1) = ... =
-            // = (2^128-1)*(2^128+1)*(2^129+1)*...*(2^{k-1}+1) and is thus divisible by 2^128 - 1.
+            // By Fermat's little theorem, z^{2^{2^k}} = z^{2^{2^k} mod (2^{128}-1)}
+            // If k>=7, then 2^{2^k} mod (2^{128}-1) = 1 (proof below), and so z^{2^{2^k)} = z^1 = z,
+            // so we just copy z into res.
+            // Here's the proof 2^{2^k} mod (2^{128}-1) = 1 for k>=7:
+            // (2^128-1)*(2^128+1)*(2^256+1)*...*(2^{2^{k-1}}+1)  =
+            // (2^256-1)*(2^256+1)*...*(2^{2^{k-1}}+1) =
+            // (2^512-1)*(2^512+1)*...*(2^{2^{k-1}}+1) =
+            // 2^{2^k}-1 and thus 2^{2^k}-1 is divisible by 2^128 - 1.
             res.word[0] = z.word[0];
             res.word[1] = z.word[1];
         }
         else {
             // powTable0[k][i] contains the result of raising x^i to the power 2^k for i = 0...63
-            // powTable0[k][i-64] contains the result of raising x^i to the power 2^k for i = 64...128
+            // powTable1[k][i-64] contains the result of raising x^i to the power 2^k for i = 64...127
             // Because raising to the power 2^k is linear over any field of characteristic 2,
             // we just need to XOR the values in these tables at indices i where z is 1.
             // This selection is done via multiplication by 0 or 1, to avoid having an input-dependent path

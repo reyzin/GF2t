@@ -296,38 +296,74 @@ public class GF2_192Test {
     }
 
     @Test
-    public void pow65535Test() {
+    public void pow2To2ToKTest() {
+        // includes squaring test
         GF2_192 res = new GF2_192();
+        GF2_192 z;
+        int maxK = 11;
 
+        for (int k=0; k<maxK; k++) {
+            GF2_192.power2To2ToK(res, zero,k);
+            assertFalse("Fail: power2To2ToK of 0 for k="+k, !res.isZero());
 
-        // Test power 65536
-        GF2_192.pow65536(res, zero);
-        assertFalse("Fail: pow65536 of 0", !res.isZero());
+            z = new GF2_192(zero);
+            GF2_192.power2To2ToK(z, z,k);
+            assertFalse("Fail: power2To2ToK of 0 in place for k="+k, !z.isZero());
 
-        GF2_192 z = new GF2_192(zero);
-        GF2_192.pow65536(z, z);
-        assertFalse("Fail: pow65536 of 0 in place", !z.isZero());
+            GF2_192.power2To2ToK(res, one, k);
+            assertFalse("Fail: power2To2ToK of 1 for k="+k, !res.isOne());
 
+            z = new GF2_192(one);
+            GF2_192.power2To2ToK(z, z, k);
+            assertFalse("Fail: power2To2ToK of 1 in place for k="+k, !z.isOne());
+        }
 
-        GF2_192.pow65536(res, one);
-        assertFalse("Fail: pow65536 of 1", !res.isOne());
+        GF2_192.sqr(res, zero);
+        assertFalse("Fail: sqr of 0", !res.isZero());
+
+        z = new GF2_192(zero);
+        GF2_192.sqr(z, z);
+        assertFalse("Fail: sqr of 0 in place", !z.isZero());
+
+        GF2_192.sqr(res, one);
+        assertFalse("Fail: sqr of 1", !res.isOne());
 
         z = new GF2_192(one);
-        GF2_192.pow65536(z, z);
-        assertFalse("Fail: pow65536 of 1 in place", !z.isOne());
-
+        GF2_192.sqr(z, z);
+        assertFalse("Fail: sqr of 1 in place", !z.isOne());
 
         GF2_192 res1 = new GF2_192();
+        GF2_192 res2 = new GF2_192();
         for (long[] p : testValues) {
-            z = new GF2_192(p);
-            GF2_192.pow65536(res, z);
-            GF2_192.sqr(res1, z);
-            for (int k = 1; k < 16; k++) {
-                GF2_192.sqr(res1, res1);
+            for (int k=0; k<maxK; k ++) {
+                z = new GF2_192(p);
+                GF2_192.power2To2ToK(res, z, k);
+                if (k==0) {
+                    // Ground truth for squaring: self-multiply
+                    GF2_192.mul(res1, z, z); // sqr should equal power2To2ToK with k = 0
+                    assertFalse("Fail: power2To2To1  " + z, !res.equals(res1));
+                    GF2_192.sqr(res2, z); // sqr should equal self-multiply with k = 0
+                    assertFalse("Fail: sqr for k = " + k + " value = " + z, !res.equals(res2));
+                }
+                else {
+                    // res1 is the ground truth, computed using smaller values of k than is currently being tested
+                    GF2_192.power2To2ToK(res1, res1,k-1);
+                    assertFalse("Fail: power2To2ToK for k = " + k + " value = " + z, !res.equals(res1));
+                }
+                if (k>=7) {
+                    //assertFalse("Fail: Fermat's little theorem violation for k = "+k+" value = "+z, !res.equals(z));
+                }
+
+                // Input location = output location tests
+                GF2_192.power2To2ToK(z, z, k); // power2To2ToK into same location
+                assertFalse("Fail: power2To2ToK in place for k = " +k + " value = " + new GF2_192(p), !res.equals(z));
+                if (k==0) {
+                    z = new GF2_192(p);
+                    GF2_192.sqr(z, z); // sqr into same location
+                    assertFalse("Fail: sqr in place " + new GF2_192(p), !res.equals(z));
+
+                }
             }
-            assertFalse("Fail: pow65536 " + new GF2_192(p), !res.equals(res1));
-            GF2_192.pow65536(z, z); // square into same location
-            assertFalse("Fail: pow65536 in place" + new GF2_192(p), !res.equals(z));
         }
     }
 
@@ -510,15 +546,14 @@ public class GF2_192Test {
         }
 
     }
-/*
+
     @Test
     public void interpolateTest() {
 
         // Test for null inputs, arrays of unequal length, etc.
-        Optional<GF2_192>[] optArray = new Optional[3];
+        GF2_192[] optArray = new GF2_192[2];
         optArray[0] = null;
-        optArray[1] = Optional.empty();
-        optArray[2] = Optional.of(new GF2_192(17));
+        optArray[1] = new GF2_192(17);
 
         GF2_192_Poly res;
 
@@ -528,7 +563,7 @@ public class GF2_192Test {
         for (int len = 1; len < 100; len++) {
             byte[] points = new byte[len];
             GF2_192[] values = new GF2_192[len];
-            byte[] temp = new byte[16];
+            byte[] temp = new byte[24];
             for (int i = 0; i < len; i++) {
                 // generate a byte that is not equal to anything in the array nor 0
                 while (true) {
@@ -553,14 +588,14 @@ public class GF2_192Test {
                 values[i] = new GF2_192(temp);
             }
 
-            res = GF2_192_Poly.interpolate(points, values, Optional.empty());
+            res = GF2_192_Poly.interpolate(points, values, null);
             for (int i = 0; i < len; i++) {
                 GF2_192 t = res.evaluate(points[i]);
                 assertFalse("Interpolation error on length = " + len + " at input point number " + i, !t.equals(values[i]));
             }
             rand.nextBytes(temp);
             GF2_192 valueAt0 = new GF2_192(temp);
-            res = GF2_192_Poly.interpolate(points, values, Optional.of(valueAt0));
+            res = GF2_192_Poly.interpolate(points, values, valueAt0);
             for (int i = 0; i < len; i++) {
                 GF2_192 t = res.evaluate(points[i]);
                 assertFalse("Interpolation error on length =  " + len + " at input point number " + i + "(with optional 0)", !t.equals(values[i]));
@@ -573,7 +608,7 @@ public class GF2_192Test {
         for (int len = 1; len < 100; len++) {
             byte[] points = new byte[len];
             GF2_192[] values = new GF2_192[len];
-            byte[] temp = new byte[16];
+            byte[] temp = new byte[24];
 
             for (int i = 0; i < len; i++) {
                 // generate a byte that is not equal to anything in the array (but may be 0)
@@ -596,13 +631,13 @@ public class GF2_192Test {
                 values[i] = new GF2_192(temp);
             }
 
-            res = GF2_192_Poly.interpolate(points, values, Optional.empty());
+            res = GF2_192_Poly.interpolate(points, values, null);
             for (int i = 0; i < len; i++) {
                 GF2_192 t = res.evaluate(points[i]);
                 assertFalse("Interpolation error on length =  " + len + " " + i + "(with 0 allowed but not additional)", !t.equals(values[i]));
             }
 
-            for (Optional<GF2_192> opt : optArray) {
+            for (GF2_192 opt : optArray) {
                 res = GF2_192_Poly.interpolate(null, values, opt);
                 assertFalse("Fail: interpolate should output null on points = null", res != null);
                 res = GF2_192_Poly.interpolate(points, null, opt);
@@ -618,9 +653,9 @@ public class GF2_192Test {
             }
         }
 
-        for (Optional<GF2_192> opt : optArray) {
+        for (GF2_192 opt : optArray) {
             res = GF2_192_Poly.interpolate(null, null, opt);
             assertFalse("Fail: interpolate should output null on both points and values = null", res != null);
         }
-    }*/
+    }
 }

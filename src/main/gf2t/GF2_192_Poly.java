@@ -1,7 +1,7 @@
 package gf2t;
 
-public class GF2_128_Poly {
-    private final GF2_128 [] c; // must be not null and of length at least 1
+public class GF2_192_Poly {
+    private final GF2_192 [] c; // must be not null and of length at least 1
 
     private int deg; // must be >=0. actual degree is <= deg. c[deg+1]...c[c.length-1] must be 0 or null
     // deg of the 0 polynomial is 0
@@ -21,7 +21,7 @@ public class GF2_128_Poly {
      * @return the unique lowest-degree polynomial p such that for every i, p(points[i]) = values[i] and p(0)=valueAt0.get()
      *         (if valueAt0.isPresent())
      */
-    public static GF2_128_Poly interpolate (byte[] points, GF2_128 [] values, GF2_128 valueAt0) {
+    public static GF2_192_Poly interpolate (byte[] points, GF2_192 [] values, GF2_192 valueAt0) {
         if (points == null || values == null || values.length == 0 || values.length!=points.length) return null;
 
         int resultDegree = values.length-1;
@@ -29,17 +29,17 @@ public class GF2_128_Poly {
             resultDegree++;
         }
 
-        GF2_128_Poly result = new GF2_128_Poly(resultDegree,  0);
-        GF2_128_Poly vanishingPoly = new GF2_128_Poly(resultDegree, 1);
+        GF2_192_Poly result = new GF2_192_Poly(resultDegree,  0);
+        GF2_192_Poly vanishingPoly = new GF2_192_Poly(resultDegree, 1);
 
         for (int i = 0; i < points.length; i++) {
-            GF2_128 t = result.evaluate(points[i]);
-            GF2_128 s = vanishingPoly.evaluate(points[i]);
+            GF2_192 t = result.evaluate(points[i]);
+            GF2_192 s = vanishingPoly.evaluate(points[i]);
 
             // need to find r such that currentValue+r*valueOfVanishingPoly = values[i]
-            GF2_128.add(t, t, values[i]);
-            GF2_128.invert(s, s);
-            GF2_128.mul(t, t, s);
+            GF2_192.add(t, t, values[i]);
+            GF2_192.invert(s, s);
+            GF2_192.mul(t, t, s);
 
             result.addMonicTimesConstantTo(vanishingPoly, t);
 
@@ -49,13 +49,13 @@ public class GF2_128_Poly {
         }
 
         if (valueAt0!=null) { // the last point is 0
-            GF2_128 t = new GF2_128(result.c[0]); // evaluating at 0 is easy
-            GF2_128 s = new GF2_128(vanishingPoly.c[0]); // evaluating at 0 is easy
+            GF2_192 t = new GF2_192(result.c[0]); // evaluating at 0 is easy
+            GF2_192 s = new GF2_192(vanishingPoly.c[0]); // evaluating at 0 is easy
 
             // need to find r such that currentValue+r*valueOfVanishingPoly = valueAt0]
-            GF2_128.add(t, t, valueAt0);
-            GF2_128.invert(s, s);
-            GF2_128.mul(t, t, s);
+            GF2_192.add(t, t, valueAt0);
+            GF2_192.invert(s, s);
+            GF2_192.mul(t, t, s);
             result.addMonicTimesConstantTo(vanishingPoly, t);
         }
         return result;
@@ -66,11 +66,11 @@ public class GF2_128_Poly {
      * @param x the last byte of a field element (all other bits are assumed to be 0)
      * @return the value of this polynomial evaluated at the field element
      */
-    public GF2_128 evaluate (byte x) {
-        GF2_128 res = new GF2_128(c[deg]);
+    public GF2_192 evaluate (byte x) {
+        GF2_192 res = new GF2_192(c[deg]);
         for (int d = deg-1; d>=0; d--) {
-            GF2_128.mul(res, res, x);
-            GF2_128.add(res, res, c[d]);
+            GF2_192.mul(res, res, x);
+            GF2_192.add(res, res, c[d]);
         }
         return res;
     }
@@ -80,14 +80,14 @@ public class GF2_128_Poly {
      * @param p the monic polynomial being added to this
      * @param r the constant by which p is multiplied before being added
      */
-    private void addMonicTimesConstantTo (GF2_128_Poly p, GF2_128 r) {
-        GF2_128 t = new GF2_128();
+    private void addMonicTimesConstantTo (GF2_192_Poly p, GF2_192 r) {
+        GF2_192 t = new GF2_192();
         for (int i = 0; i<p.deg; i++) {
-            GF2_128.mul (t, p.c[i], r);
-            GF2_128.add (c[i], c[i], t);
+            GF2_192.mul (t, p.c[i], r);
+            GF2_192.add (c[i], c[i], t);
         }
         deg = p.deg;
-        c[deg] = new GF2_128(r);
+        c[deg] = new GF2_192(r);
     }
 
 
@@ -97,13 +97,13 @@ public class GF2_128_Poly {
      */
     private void monicTimesMonomial (byte r) {
         deg++;
-        c[deg] = new GF2_128(1);
+        c[deg] = new GF2_192(1);
         for (int i = deg - 1; i > 0; i--) {
             // c[i] = c[i-1]+r*c[i]
-            GF2_128.mul(c[i], c[i], r);
-            GF2_128.add(c[i], c[i], c[i - 1]);
+            GF2_192.mul(c[i], c[i], r);
+            GF2_192.add(c[i], c[i], c[i - 1]);
         }
-        GF2_128.mul(c[0], c[0], r);
+        GF2_192.mul(c[0], c[0], r);
     }
 
 
@@ -113,9 +113,9 @@ public class GF2_128_Poly {
      * @param maxDeg the maximum degree this polynomial could possibly have (to allocate space)
      * @param constantTerm the polynomial is initially created with degree 0 and given constantTerm
      */
-    private GF2_128_Poly (int maxDeg, int constantTerm) {
-        c = new GF2_128[maxDeg+1];
-        c[0] = new GF2_128(constantTerm);
+    private GF2_192_Poly (int maxDeg, int constantTerm) {
+        c = new GF2_192[maxDeg+1];
+        c[0] = new GF2_192(constantTerm);
         deg = 0;
     }
 
