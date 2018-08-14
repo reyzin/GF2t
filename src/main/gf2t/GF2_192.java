@@ -125,7 +125,6 @@ public class GF2_192 {
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
-
     public static void mul (GF2_192 res, GF2_192 a, byte b) {
 
         long w0 = 0, w1 = 0, w2 = 0, w3=0;
@@ -145,8 +144,21 @@ public class GF2_192 {
         res.word[2] = w2;
     }
 
+
+    /*************************************************************************************************
+     * Note carefully:
+     * two implementations of mul are provided
+     * you MUST choose one and delete or rename the other, or else the code will not compile.
+     *
+     * The first one is is about 3 times faster than the second, but uses table lookups, which may not
+     * preserve the secrecy of the inputs in case of side-channel attacks.
+     *************************************************************************************************/
+
     /**
      * Computes a times b and puts the result into res.
+     * Uses table lookups, which may not preserve
+     * the secrecy of the inputs in case of side-channel attacks.
+     *
      * @param res output; must be not null; may be equal to a and/or b
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
@@ -224,6 +236,15 @@ public class GF2_192 {
         res.word[2] = w2;
     }
 
+    /**
+     * Computes a times b and puts the result into res.
+     * Uses no branching or data-dependent table lookups, to reduce exposure to side-channel attacks
+     * when secrecy of a or b needs to be protected.
+     * @param res output; must be not null; may be equal to a and/or b
+     * @param a multiplicand; may be equal to res, in which case will get overwritten
+     * @param b multiplier; may be equal to res, in which case will get overwritten
+     *
+     */
     public static void mul(GF2_192 res, GF2_192 a, GF2_192 b) {
         long [] t = new long[2];
         long [] r = new long[6];
@@ -309,8 +330,8 @@ public class GF2_192 {
     /**
      * Multiplies (without any modular reduction) two 64-bit polynomials over GF(2)
      * @param r The resulting 128-bit polynomial will be in r[1] and r[0] (r must have length at least 2)
-     * @param a 64-b-t multiplier
-     * @param b 64-bit multiplicand
+     * @param a 64-bit multiplicand
+     * @param b 64-bit multiplier
      */
     private static void karmul64(long [] r, long a, long b) {
         // Standard Karatsuba multiplication
@@ -331,8 +352,8 @@ public class GF2_192 {
     /**
      *
      * Multiplies (without any modular reduction) two 32-bit polynomials over GF(2)
-     * @param a 32-bit multiplier (contained in bits 0-31; bits 32-63 must be 0)
-     * @param b 32-bit multiplicand (contained in bits 0-31; bits 32-63 must be 0)
+     * @param a 32-bit multiplicand (contained in bits 0-31; bits 32-63 must be 0)
+     * @param b 32-bit multiplier (contained in bits 0-31; bits 32-63 must be 0)
      * @return 64-bit result
      */
     private static long karmul32(long a, long b) {
