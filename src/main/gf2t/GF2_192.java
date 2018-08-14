@@ -119,30 +119,6 @@ public class GF2_192 {
         res.word[2] = a.word[2]^b.word[2];
     }
 
-    /**
-     * Computes a times b and puts the result into res. More efficient than mul(res, a, new GF2_192(b))
-     * @param res output; must be not null; may be equal to a and/or b
-     * @param a multiplicand; may be equal to res, in which case will get overwritten
-     * @param b multiplier; may be equal to res, in which case will get overwritten
-     */
-    public static void mul (GF2_192 res, GF2_192 a, byte b) {
-
-        long w0 = 0, w1 = 0, w2 = 0, w3=0;
-
-        for (int i = 7; i >= 0; i--) {
-            w3 = w2 >>> 63;
-            w2 = (w2 << 1) | (w1 >>> 63);
-            w1 = (w1 << 1) | (w0 >>> 63);
-            w0 <<= 1;
-            long t = (b >>> i) & 1;
-            w2 ^= a.word[2] * t;
-            w1 ^= a.word[1] * t;
-            w0 ^= (a.word[0] * t) ^ (irredPentanomial * w3); // mod reduce
-        }
-        res.word[0] = w0;
-        res.word[1] = w1;
-        res.word[2] = w2;
-    }
 
 
     /*************************************************************************************************
@@ -163,7 +139,7 @@ public class GF2_192 {
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
-    public static void mulOld (GF2_192 res, GF2_192 a, GF2_192 b) {
+    public static void mul (GF2_192 res, GF2_192 a, GF2_192 b) {
 
         // Implements a sort of times-x-and-add algorithm, except instead of multiplying by x
         // we multiply by x^4 and then add one of possible 16 precomputed values
@@ -364,6 +340,32 @@ public class GF2_192 {
         }
         return res;
     }
+
+    /**
+     * Computes a times b and puts the result into res. More efficient than mul(res, a, new GF2_192(b))
+     * @param res output; must be not null; may be equal to a and/or b
+     * @param a multiplicand; may be equal to res, in which case will get overwritten
+     * @param b multiplier; may be equal to res, in which case will get overwritten
+     */
+    public static void mul (GF2_192 res, GF2_192 a, byte b) {
+
+        long w0 = 0, w1 = 0, w2 = 0, w3=0;
+
+        for (int i = 7; i >= 0; i--) {
+            w3 = w2 >>> 63;
+            w2 = (w2 << 1) | (w1 >>> 63);
+            w1 = (w1 << 1) | (w0 >>> 63);
+            w0 <<= 1;
+            long t = (b >>> i) & 1;
+            w2 ^= a.word[2] * t;
+            w1 ^= a.word[1] * t;
+            w0 ^= (a.word[0] * t) ^ (irredPentanomial * w3); // mod reduce
+        }
+        res.word[0] = w0;
+        res.word[1] = w1;
+        res.word[2] = w2;
+    }
+
 
     public static void invert (GF2_192 res, GF2_192 z) {
         // Computes z^{2^192-2} = z^{exponent written in binary as 191 ones followed by a single zero}

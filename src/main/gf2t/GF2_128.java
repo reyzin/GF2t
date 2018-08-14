@@ -112,30 +112,6 @@ public class GF2_128 {
         res.word[1] = a.word[1]^b.word[1];
     }
 
-    /**
-     * Computes a times b and puts the result into res. More efficient than mul(res, a, new GF2_128(b))
-     * @param res output; must be not null; may be equal to a and/or b
-     * @param a multiplicand; may be equal to res, in which case will get overwritten
-     * @param b multiplier; may be equal to res, in which case will get overwritten
-     */
-
-    public static void mul (GF2_128 res, GF2_128 a, byte b) {
-
-        long w0 = 0, w1 = 0, w2 = 0;
-
-        for (int i = 7; i >= 0; i--) {
-            w2 = w1 >>> 63;
-            w1 = (w1 << 1) | (w0 >>> 63);
-            w0 <<= 1;
-            long t = (b >>> i) & 1;
-            // the next two lines us multiplication by t rather than branching on t,
-            // to reduce the chance of side-channel attacks
-            w1 ^= a.word[1] * t;
-            w0 ^= (a.word[0] * t) ^ (irredPentanomial * w2); // mod reduce
-        }
-        res.word[0] = w0;
-        res.word[1] = w1;
-    }
 
     /*************************************************************************************************
      * Note carefully:
@@ -155,7 +131,7 @@ public class GF2_128 {
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
-    public static void mulOld (GF2_128 res, GF2_128 a, GF2_128 b) {
+    public static void mul (GF2_128 res, GF2_128 a, GF2_128 b) {
 
         // Implements a sort of times-x-and-add algorithm, except instead of multiplying by x
         // we multiply by x^4 and then add one of possible 16 precomputed values
@@ -322,8 +298,33 @@ public class GF2_128 {
         return res;
     }
 
+    /**
+     * Computes a times b and puts the result into res. More efficient than mul(res, a, new GF2_128(b))
+     * @param res output; must be not null; may be equal to a and/or b
+     * @param a multiplicand; may be equal to res, in which case will get overwritten
+     * @param b multiplier; may be equal to res, in which case will get overwritten
+     */
 
-        /**
+    public static void mul (GF2_128 res, GF2_128 a, byte b) {
+
+        long w0 = 0, w1 = 0, w2 = 0;
+
+        for (int i = 7; i >= 0; i--) {
+            w2 = w1 >>> 63;
+            w1 = (w1 << 1) | (w0 >>> 63);
+            w0 <<= 1;
+            long t = (b >>> i) & 1;
+            // the next two lines us multiplication by t rather than branching on t,
+            // to reduce the chance of side-channel attacks
+            w1 ^= a.word[1] * t;
+            w0 ^= (a.word[0] * t) ^ (irredPentanomial * w2); // mod reduce
+        }
+        res.word[0] = w0;
+        res.word[1] = w1;
+    }
+
+
+    /**
          * Computes z^{-1} and puts the result into res.
          * @param res output; must be not null; may be equal to z
          * @param z input to be raised to 2^16; may be equal to res, in which case will get overwritten
