@@ -1,4 +1,4 @@
-# Arithmetic operations and polynomial interpolation over GF(2^128) and GF(2^192)
+# Arithmetic operations and polynomial interpolation over GF(2^128) and GF(2^192) in Java
 
 This code implements finite field arithmetic and polynomial interpolation/evaluation in two Galois fields of characteristic 2: GF(2^128) and GF(2^192).
 The code is written with performance and side-channel attack resilience in mind.
