@@ -260,40 +260,6 @@ public class GF2_192Test {
 
     }
 
-    @Test
-    public void sqrTest() {
-        GF2_192 res = new GF2_192();
-        GF2t_slow res1 = new GF2t_slow();
-
-
-        // Test squaring
-        GF2_192.sqr(res, zero);
-
-        assertFalse("Fail: square of 0", !res.isZero());
-
-        GF2_192 z = new GF2_192(zero);
-        GF2_192.sqr(z, z);
-        assertFalse("Fail: square of 0 in place", !z.isZero());
-
-
-        GF2_192.sqr(res, one);
-        assertFalse("Fail: square of 1", !res.isOne());
-
-        z = new GF2_192(one);
-        GF2_192.sqr(z, z);
-        assertFalse("Fail: square of 1 in place", !z.isOne());
-
-
-        for (long[] p : testValues) {
-            z = new GF2_192(p);
-            GF2_192.sqr(res, z); // ouptut goes to a different location
-            GF2t_slow.mulBits(res1, p, p);
-            GF2t_slow.modReduce(res1, m);
-            assertFalse("Fail: square " + new GF2_192(p), !res1.equals(res.toLongArray()));
-            GF2_192.sqr(z, z);   // output goes to the same location
-            assertFalse("Fail: square in place " + new GF2_192(p), !res.equals(z));
-        }
-    }
 
     @Test
     public void pow2To2ToKTest() {

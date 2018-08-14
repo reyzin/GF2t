@@ -121,38 +121,17 @@ public class GF2_128 {
 
     public static void mul (GF2_128 res, GF2_128 a, byte b) {
 
-        // contains a*0, a*1, a*x, a*(x+1), mod reduced
-        long [] a0muls = new long[4];
-        long [] a1muls = new long[4];
+        long w0 = 0, w1 = 0, w2 = 0;
 
-        a0muls[1] = a.word[0];
-        a1muls[1] = a.word[1];
-
-        // a*x
-        a0muls[2] = a.word[0] << 1;
-        a1muls[2] = (a.word[1] << 1) | (a.word[0]>>>63);
-        // mod reduce
-        a0muls[2] ^= irredMuls[(int)(a.word[1]>>>63)];
-
-        // a*x+a
-        a0muls[3] = a0muls[1] ^ a0muls[2];
-        a1muls[3] = a1muls[1] ^ a1muls[2];
-
-
-        int index = (b>>>6) & 3;
-        long w0 = a0muls[index], w1 = a1muls[index];
-
-        for (int i = 4; i >= 0; i -= 2) {
-            // Multiply by x^2
-            int modReduceIndex = (int) (w1 >>> 62);
-            w1 = (w1 << 2) | (w0 >>> 62);
-            // MOD REDUCE ACCORDING TO modReduceIndex by XORing the right value
-            w0 = (w0 << 2) ^ irredMuls[modReduceIndex];
-
-            // Add the correct multiple of a
-            index =  (b >>> i) & 3;
-            w0 ^= a0muls[index];
-            w1 ^= a1muls[index];
+        for (int i = 7; i >= 0; i--) {
+            w2 = w1 >>> 63;
+            w1 = (w1 << 1) | (w0 >>> 63);
+            w0 <<= 1;
+            long t = (b >>> i) & 1;
+            // the next two lines us multiplication by t rather than branching on t,
+            // to reduce the chance of side-channel attacks
+            w1 ^= a.word[1] * t;
+            w0 ^= (a.word[0] * t) ^ (irredPentanomial * w2); // mod reduce
         }
         res.word[0] = w0;
         res.word[1] = w1;
@@ -164,7 +143,7 @@ public class GF2_128 {
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
-    public static void mul (GF2_128 res, GF2_128 a, GF2_128 b) {
+    public static void mulOld (GF2_128 res, GF2_128 a, GF2_128 b) {
 
         // Implements a sort of times-x-and-add algorithm, except instead of multiplying by x
         // we multiply by x^4 and then add one of possible 16 precomputed values
@@ -228,11 +207,108 @@ public class GF2_128 {
     }
 
 
+
+
+    public static void mul(GF2_128 res, GF2_128 a, GF2_128 b) {
+        long [] t = new long[2];
+        long [] r = new long[4];
+
+        // Standard Karatsuba multiplication
+        // (A1x^64+A0)(B1x^64+B0) = A1B1 x^128 + (A1B0+A0B1)x^64 + A0B0 =
+        // (A1+A0)(B1+B0)x^64 + A1B1(x^128-x^64) + A0B0(1-x^64) (plus is the same as minus -- just XOR -- in GF(2^128)
+        //
+        // Since we operate on 64 bits at a time, this becomes
+        // r[3] = highTerm[1];
+        // r[2] = highTerm[1]^highTerm[0]^midTerm[1]^lowTerm[1];
+        // r[1] = highTerm[0]^midTerm[0]^lowTerm[1]^lowTerm[0];
+        // r[0] = lowTerm[0];
+
+        // high term
+        karmul64(t, a.word[1], b.word[1]);
+        r[3] = t[1];
+        r[2] = t[1]^t[0];
+        r[1] = t[0];
+
+        // middle term
+        karmul64(t,a.word[1]^a.word[0], b.word[1]^b.word[0]);
+        r[2] ^= t[1];
+        r[1] ^= t[0];
+
+        // low term
+        karmul64(t, a.word[0], b.word[0]);
+        r[2] ^= t[1];
+        r[1] ^= t[1]^t[0];
+        r[0] = t[0];
+
+        // Now do a modular reduction. Strategy:
+        // 1. multiply the highest-order word by x^64 times the modulus x^128+x^7+x^2+x+1 and xor the result in
+        //    (this will 0 out the highest order word, so we won't even compute it -- we'll just compute the other
+        //    affected words -- which are the middle two words)
+        //
+        // 2. multiply the second-highest-order word by the modulus x^128+x^7+x^2+x+1 and xor the result in
+        //    (this will 0 out the second-highest order word, so we won't even compute it -- we'll just compute
+        //    the other affected words -- which are the last two words)
+        //
+        for (int i = 3; i>=2; i--) {
+            long w = r[i];
+
+            // Compute the second-lowest-order word of m*modulus and xor it into the appropriate word of r
+            long s = (w>>>57)^(w>>>62)^(w>>>63);
+            r[i-1]^=s;
+
+            // Compute the lowest-order word of m*modulus and xor it into the appropriate word of r
+            s = w^(w<<1)^(w<<2)^(w<<7);
+            r[i-2] ^= s;
+        }
+        // Now the result is contained in the last two words
+        res.word[1] = r[1];
+        res.word[0] = r[0];
+    }
+
     /**
-     * Computes z^{-1} and puts the result into res.
-     * @param res output; must be not null; may be equal to z
-     * @param z input to be raised to 2^16; may be equal to res, in which case will get overwritten
+     * Multiplies (without any modular reduction) two 64-bit polynomials over GF(2)
+     * @param r The resulting 128-bit polynomial will be in r[1] and r[0] (r must have length at least 2)
+     * @param a 64-b-t multiplier
+     * @param b 64-bit multiplicand
      */
+    private static void karmul64(long [] r, long a, long b) {
+        // Standard Karatsuba multiplication
+        // (A1x^32+A0)(B1x^32+B0) = A1B1 x^64 + (A1B0+A0B1)x^32 + A0B0 =
+        // (A1+A0)(B1+B0)x^32 + A1B1(x^64-x^32) + A0B0(1-x^32) (plus is the same as minus -- just XOR -- in GF(2^128)
+        long b1 = b>>>32;
+        long b0 = b&0xFFFFFFFFL;
+        long a1 = a>>>32;
+        long a0 = a&0xFFFFFFFFL;
+        long highTerm = karmul32(a1, b1);
+        long midTerm = karmul32(a1^a0, b1^b0);
+        long lowTerm = karmul32(a0, b0);
+        long t = highTerm^midTerm^lowTerm;
+        r[1] = highTerm^(t>>>32);
+        r[0] = lowTerm^(t<<32);
+    }
+
+    /**
+     *
+     * Multiplies (without any modular reduction) two 32-bit polynomials over GF(2)
+     * @param a 32-bit multiplier (contained in bits 0-31; bits 32-63 must be 0)
+     * @param b 32-bit multiplicand (contained in bits 0-31; bits 32-63 must be 0)
+     * @return 64-bit result
+     */
+    private static long karmul32(long a, long b) {
+        long res = 0L;
+        for (int i=31; i>=0; i--) {
+            res<<=1;
+            res^=a*((b>>>i)&1);
+        }
+        return res;
+    }
+
+
+        /**
+         * Computes z^{-1} and puts the result into res.
+         * @param res output; must be not null; may be equal to z
+         * @param z input to be raised to 2^16; may be equal to res, in which case will get overwritten
+         */
 
     public static void invert (GF2_128 res, GF2_128 z) {
         // Computes z^{2^128-2} = z^{exponent written in binary as 127 ones followed by a single zero}

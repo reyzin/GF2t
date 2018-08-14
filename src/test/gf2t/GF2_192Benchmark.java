@@ -38,6 +38,16 @@ public class GF2_192Benchmark {
         System.out.printf(" (squaring is %2.1f times faster)\n",((double)t4-t3)/(t2-t1)*numSqr/(double)numMult);
 
 
+        int numByteMult = 1000000000;
+        t3 = System.nanoTime();
+        byte b = (int)0x1C;
+        for (int i = 0; i<numMult; i++) {
+            GF2_192.mul(res, p,b);
+        }
+        t4 = System.nanoTime();
+        System.out.printf("Byte Multiplication  %1.3f ns\n",(t4-t3)/(double)numByteMult);
+
+
         int numpow2To64 = 20000000;
         t1 = System.nanoTime();
         for (int i = 0; i<numpow2To64; i++) {
