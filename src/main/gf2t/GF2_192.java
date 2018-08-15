@@ -79,7 +79,7 @@ public class GF2_192 {
 
     /**
      *
-     * @return long array of length 3 containing the two words of the field element
+     * @return long array of length 3 containing the three words of the field element
      */
     public long [] toLongArray() {
         long [] ret = new long[3];

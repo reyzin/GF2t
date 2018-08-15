@@ -139,7 +139,7 @@ public class GF2_128 {
         // contains a*0, a*1, a*x, a*(x+1), a*x^2, a*(x^2+1), a*(x^2+x), a*(x^2+x+1)
         // a*x^3, a*(x^3+1), a*(x^3+x), a*(x^3+x+1), a*(x^3+x^2), a*(x^3+x^2+1), a*(x^3+x^2+x), a*(x^3+x^2+x+1), all mod reduced
         // First word of each is in a0 muls, second word of each is in a1muls
-        long [] a0muls = new long[16];
+        long []     a0muls = new long[16];
         long [] a1muls = new long[16];
 
         // a0muls[0] and a1muls[0] are already correctly initialized to 0
