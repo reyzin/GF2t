@@ -1,3 +1,31 @@
+/*
+ By Leonid Reyzin
+
+ This is free and unencumbered software released into the public domain.
+
+ Anyone is free to copy, modify, publish, use, compile, sell, or
+ distribute this software, either in source code form or as a compiled
+ binary, for any purpose, commercial or non-commercial, and by any
+ means.
+
+ In jurisdictions that recognize copyright laws, the author or authors
+ of this software dedicate any and all copyright interest in the
+ software to the public domain. We make this dedication for the benefit
+ of the public at large and to the detriment of our heirs and
+ successors. We intend this dedication to be an overt act of
+ relinquishment in perpetuity of all present and future rights to this
+ software under copyright law.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ OTHER DEALINGS IN THE SOFTWARE.
+
+ For more information, please refer to <http://unlicense.org>
+ */
 package gf2t;
 
 import java.util.*;
@@ -226,6 +254,27 @@ public class GF2_192Test {
         s = t.toLongArray();
 
         assertFalse("Fail: constructor on byte array",r[0] != s[0] || r[1] != s[1] || r[2] != s[2]);
+        byte [] c = t.toByteArray();
+        assertFalse("Fail: toByteArray", !Arrays.equals(b, c));
+
+        byte [] b2 = new byte[30];
+        for (int i=0; i<24; i++) {
+            b2[i+6]=b[i];
+        }
+        t = new GF2_192(b2, 6);
+        s = t.toLongArray();
+        assertFalse("Fail: constructor on byte array with offset", r[0] != s[0] || r[1] != s[1] || r[2]!=s[2]);
+
+        byte [] b1 = t.toByteArray();
+        assertFalse("Fail: toByteArray", !Arrays.equals(b, b1));
+
+
+        byte [] b3 = new byte [40];
+        t.toByteArray(b3, 10);
+        for (int i = 0; i<b.length; i++) {
+            assertFalse("Fail: toByteArray with offset", b3[i+10]!=b[i]);
+        }
+
 
         s[0] = 0xFFFFFFFFFFFFFFFFL;
         s[1] = 0xFFFFFFFFFFFFFFFFL;
@@ -258,6 +307,25 @@ public class GF2_192Test {
         s = t.toLongArray();
         assertFalse("Fail: constructor on byte array of all 1s", r[0] != s[0] || r[1] != s[1] || r[2]!=s[2]);
 
+        b1 = t.toByteArray();
+        assertFalse("Fail: toByteArray all 1s", !Arrays.equals(b, b1));
+
+        b2 = new byte[30];
+        for (int i=0; i<24; i++) {
+            b2[i+6]=b[i];
+        }
+        t = new GF2_192(b2, 6);
+        s = t.toLongArray();
+        assertFalse("Fail: constructor on byte array with offset of all 1s", r[0] != s[0] || r[1] != s[1] || r[2]!=s[2]);
+
+        b1 = t.toByteArray();
+        assertFalse("Fail: toByteArray all 1s", !Arrays.equals(b, b1));
+
+        b3 = new byte [40];
+        t.toByteArray(b3, 10);
+        for (int i = 0; i<b.length; i++) {
+            assertFalse("Fail: toByteArray all 1s with offset", b3[i+10]!=b[i]);
+        }
     }
 
 
@@ -523,6 +591,17 @@ public class GF2_192Test {
 
         Random rand = new Random();
 
+        // Try with arrays of length 0
+        GF2_192_Poly p = GF2_192_Poly.interpolate(new byte[0], new GF2_192[0], new GF2_192(0));
+        assertFalse("Zero polynomial should be 0 at 0", !p.evaluate((byte)0).isZero());
+        assertFalse("Zero polynomial should be 0 at 5", !p.evaluate((byte)5).isZero());
+        GF2_192 val17 = new GF2_192(17);
+        p = GF2_192_Poly.interpolate(new byte[0], new GF2_192[0], val17);
+        assertFalse("Constant 17 polynomial should be 17 at 0", !p.evaluate((byte)0).equals(val17));
+        assertFalse("Constant 17 polynomial should be 17 at 5", !p.evaluate((byte)5).equals(val17));
+
+
+
         for (int len = 1; len < 100; len++) {
             byte[] points = new byte[len];
             GF2_192[] values = new GF2_192[len];
@@ -566,6 +645,16 @@ public class GF2_192Test {
             }
             GF2_192 t = res.evaluate((byte) 0);
             assertFalse("Interpolation error on length =  " + len + " at input optional 0", !t.equals(valueAt0));
+
+            byte [] b = res.toByteArray(false);
+            GF2_192_Poly t1 = GF2_192_Poly.fromByteArray(valueAt0.toByteArray(), b);
+            byte [] b1 = t1.toByteArray(false);
+            assertFalse("To byte array round trip error " + Arrays.toString(b)+" "+Arrays.toString(b1), !Arrays.equals(b, b1));
+            byte [] b2 = t1.toByteArray(true);
+            assertFalse("To byte array round trip error at coeff0", !Arrays.equals(valueAt0.toByteArray(), Arrays.copyOfRange(b2, 0, 24)));
+            assertFalse("To byte array round trip error with coeff0 at later coeff", !Arrays.equals(b1, Arrays.copyOfRange(b2, 24, b2.length)));
+            byte [] b3 = t1.coeff0Bytes();
+            assertFalse("To byte array round trip error on coeff0", !Arrays.equals(b3, valueAt0.toByteArray()));
         }
 
         for (int len = 1; len < 100; len++) {

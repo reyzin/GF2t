@@ -1,3 +1,31 @@
+/*
+ By Leonid Reyzin
+
+ This is free and unencumbered software released into the public domain.
+
+ Anyone is free to copy, modify, publish, use, compile, sell, or
+ distribute this software, either in source code form or as a compiled
+ binary, for any purpose, commercial or non-commercial, and by any
+ means.
+
+ In jurisdictions that recognize copyright laws, the author or authors
+ of this software dedicate any and all copyright interest in the
+ software to the public domain. We make this dedication for the benefit
+ of the public at large and to the detriment of our heirs and
+ successors. We intend this dedication to be an overt act of
+ relinquishment in perpetuity of all present and future rights to this
+ software under copyright law.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+ OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ OTHER DEALINGS IN THE SOFTWARE.
+
+ For more information, please refer to <http://unlicense.org>
+ */
 package gf2t;
 
 public class GF2_128 {
@@ -59,18 +87,49 @@ public class GF2_128 {
     }
 
     /**
-     * returns the field element whose bits are given by the byte array
+     * returns the field element whose bits are given by the byte array that
      * @param that must be length 16
      */
     public GF2_128(byte [] that) {
-        assert (that.length == 16);
+        this(that, 0);
+    }
+
+    /**
+     * returns the field element whose bits are given by the byte array that[pos]...that[pos+15]
+     * @param that must be length at least pos+16
+     */
+    public GF2_128(byte [] that, int pos) {
+        assert (that.length >= pos+16);
         for (int i = 0; i<8; i++) {
-            word[0] |= (((long)that[i] & 0xFF))<<(i<<3);
+            word[0] |= (((long)that[i+pos] & 0xFF))<<(i<<3);
         }
         for (int i = 0; i<8; i++) {
-            word[1] |= (((long)that[i+8] & 0xFF))<<(i<<3);
+            word[1] |= (((long)that[i+pos+8] & 0xFF))<<(i<<3);
         }
     }
+
+    /**
+     *
+     * @return byte array of length 16 containing the two words of the field element
+     */
+    public byte[] toByteArray() {
+        byte [] ret = new byte[16];
+        toByteArray(ret, 0);
+        return ret;
+    }
+
+    /**
+     * @param ret bytes of the field element will go into ret[pos]...ret[pos+15]
+     */
+    public void toByteArray(byte[] ret, int pos) {
+        assert(ret.length>=pos+16);
+        for (int j = 0; j<2; j++) {
+            for (int i = 0; i < 8; i++) {
+                ret[pos+i+8*j] = (byte) ((word[j] >> (i << 3)) & 0xFF);
+            }
+        }
+    }
+
 
     /**
      *
@@ -131,7 +190,7 @@ public class GF2_128 {
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
-    public static void mul (GF2_128 res, GF2_128 a, GF2_128 b) {
+    public static void mul1 (GF2_128 res, GF2_128 a, GF2_128 b) {
 
         // Implements a sort of times-x-and-add algorithm, except instead of multiplying by x
         // we multiply by x^4 and then add one of possible 16 precomputed values
