@@ -190,7 +190,7 @@ public class GF2_128 {
      * @param a multiplicand; may be equal to res, in which case will get overwritten
      * @param b multiplier; may be equal to res, in which case will get overwritten
      */
-    public static void mul1 (GF2_128 res, GF2_128 a, GF2_128 b) {
+    public static void mul (GF2_128 res, GF2_128 a, GF2_128 b) {
 
         // Implements a sort of times-x-and-add algorithm, except instead of multiplying by x
         // we multiply by x^4 and then add one of possible 16 precomputed values
