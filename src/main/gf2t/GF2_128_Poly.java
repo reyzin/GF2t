@@ -206,8 +206,8 @@ public class GF2_128_Poly {
      * Lowest-degree coefficient (0 or 1 depending on coeff0) starts at index 0 of the returned array.
      * Each coefficient takes 16 bytes, for a total of degree*16 bytes if coeff0 is false,
      * or (degree+1)*16 bytes if coeff0 is true
-     * @param coeff0
-     * @return
+     * @param coeff0 whether to include coeff0
+     * @return array of all coefficients (except possibly 0th depending on coeff0)
      */
     public  byte[] toByteArray(Boolean coeff0) {
         int c0;
