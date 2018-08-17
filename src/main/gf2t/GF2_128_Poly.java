@@ -222,7 +222,7 @@ public class GF2_128_Poly {
     }
 
     /**
-     * @return The degree-0 coefficient, converted to an array of 24 bytes
+     * @return The degree-0 coefficient, converted to an array of 16 bytes
      */
     public  byte[] coeff0Bytes() {
         return c[0].toByteArray();
